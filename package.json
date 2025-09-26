@@ -1,0 +1,39 @@
+{
+  "name": "brazuca-rd-monorepo",
+  "version": "1.0.0",
+  "description": "Workspace for Brazuca RD Stremio addon (Real-Debrid proxy for Brazuca Torrents)",
+  "private": true,
+  "workspaces": [
+    "rd-stremio-addon"
+  ],
+  "scripts": {
+    "start": "npm --workspace rd-stremio-addon run start",
+    "dev": "npm --workspace rd-stremio-addon run dev",
+    "build": "npm --workspace rd-stremio-addon run build"
+  },
+  "keywords": [
+    "stremio",
+    "addon",
+    "real-debrid",
+    "brazil",
+    "live-tv",
+    "movies",
+    "series",
+    "web-scraping"
+  ],
+  "author": "Your Name",
+  "license": "MIT",
+  "dependencies": {},
+  "devDependencies": {},
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/yourusername/brazuca-rd.git"
+  },
+  "bugs": {
+    "url": "https://github.com/yourusername/brazuca-rd/issues"
+  },
+  "homepage": "https://github.com/yourusername/brazuca-rd#readme"
+} 
