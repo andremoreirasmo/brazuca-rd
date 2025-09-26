@@ -6,11 +6,11 @@ import type { SourceStream } from '../models/source-model.js';
 import type { StremioStream, StreamResponse } from '../models/stream-model.js';
 
 export class StreamService {
-  static createStreamMetadata(sourceStream: SourceStream, directUrl: string): StremioStream {
+  static createStreamMetadata(sourceStream: SourceStream, url: string): StremioStream {
     const metadata: StremioStream = {
       name: sourceStream.name || `[Brazuca RD] ${sourceStream.title || 'Unknown'}`,
       title: sourceStream.title || 'Unknown file',
-      url: directUrl,
+      url: url, // This will be either a magnet link or direct URL
       behaviorHints: { notWebReady: false }
     };
 

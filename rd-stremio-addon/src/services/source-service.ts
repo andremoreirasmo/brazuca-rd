@@ -10,19 +10,22 @@ export class SourceService {
     type: string, 
     id: string
   ): Promise<SourceStream[]> {
+    const allStreams: SourceStream[] = [];
+    
     for (const source of SOURCES) {
       try {
         const streams = await source.getStreams(type, id);
         
         if (streams.length > 0) {
           console.log(`Found ${streams.length} streams from ${source.name}`);
-          return streams;
+          allStreams.push(...streams);
         }
       } catch (error) {
         console.warn(`Failed to fetch from ${source.name}:`, error);
       }
     }
     
-    return [];
+    console.log(`Total streams found: ${allStreams.length}`);
+    return allStreams;
   }
 }

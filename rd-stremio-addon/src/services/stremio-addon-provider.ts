@@ -26,7 +26,7 @@ export class StremioAddonProvider extends BaseSourceProvider {
     return streams.map((stream) => {
       const result: SourceStream = { ...stream };
       if (stream.name) {
-        result.name = `[${this.name}] ${stream.name}`;
+        result.name = `[Brazuca RD] ${stream.name}`;
       }
       return result;
     });

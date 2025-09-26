@@ -8,18 +8,13 @@ export class ConfigService {
   static loadConfig(): AppConfig {
     const port = Number(process.env.PORT || 7000);
     const logLevel = (process.env.LOG_LEVEL as AppConfig['logLevel']) || 'info';
-    const realDebridToken = process.env.REALDEBRID_TOKEN || undefined;
-    const sourceBaseUrls = ['https://94c8cb9f702d-brazuca-torrents.baby-beamup.club'];
+    const baseUrl = process.env.BASE_URL || `http://localhost:${port}`;
 
     const config: AppConfig = { 
       port, 
-      logLevel, 
-      sourceBaseUrls 
+      logLevel,
+      baseUrl
     };
-
-    if (realDebridToken) {
-      config.realDebridToken = realDebridToken;
-    }
 
     return config;
   }

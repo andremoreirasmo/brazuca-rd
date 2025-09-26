@@ -4,6 +4,7 @@
 
 import Fastify from 'fastify';
 import pino from 'pino';
+import path from 'path';
 import stremioAddonSdk from 'stremio-addon-sdk';
 import { ConfigController } from '../controllers/config-controller.js';
 import { StreamController } from '../controllers/stream-controller.js';
@@ -22,6 +23,11 @@ export function setupRoutes() {
   fastify.register(import('@fastify/cors'), {
     origin: true,
     credentials: true
+  });
+
+  // Register static file plugin
+  fastify.register(import('@fastify/static'), {
+    root: path.resolve('public')
   });
 
   // Initialize controllers
@@ -74,6 +80,40 @@ export function setupRoutes() {
       logger.error(`Stream endpoint error: ${error instanceof Error ? error.message : 'Unknown error'}`);
       reply.send({ streams: [] });
     }
+  });
+
+  // Resolve endpoint - processes magnet links through Real-Debrid when user plays the stream
+  fastify.get('/resolve/:token/:magnet', async (req, reply) => {
+    const { token, magnet } = req.params as { token: string; magnet: string };
+    
+    if (!magnet) {
+      reply.status(400).send({ error: 'Magnet link is required' });
+      return;
+    }
+    
+    if (!token) {
+      reply.status(400).send({ error: 'Real-Debrid token is required' });
+      return;
+    }
+    
+    try {
+      const decodedMagnet = decodeURIComponent(magnet);
+      const directUrl = await streamController.processMagnetForPlayback(decodedMagnet, token);
+      
+      // Redirect to the direct download URL
+      reply.redirect(directUrl);
+    } catch (error) {
+      logger.error(`Magnet processing error: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      reply.status(500).send({ error: 'Failed to process magnet link' });
+    }
+  });
+
+  // Placeholder video endpoint - serves downloading status video
+  // The static file plugin will automatically serve files from public/ directory
+  // This route is optional but can be used for custom headers or logging
+  fastify.get('/placeholder/downloading.mp4', async (req, reply) => {
+    reply.type('video/mp4');
+    reply.sendFile('downloading.mp4');
   });
 
   return fastify;

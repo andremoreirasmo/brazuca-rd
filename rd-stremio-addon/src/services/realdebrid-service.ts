@@ -3,6 +3,7 @@
  */
 
 import { request } from 'undici';
+import { ConfigService } from './config-service.js';
 import type { TorrentInfo, MagnetResponse, UnrestrictResponse } from '../models/realdebrid-model.js';
 
 export class RealDebridService {
@@ -98,21 +99,26 @@ export class RealDebridService {
     // Select file
     await this.selectFiles(torrentId, String(largestFile.id));
     
-    // Wait for download
-    const startTime = Date.now();
-    const timeout = 180000; // 3 minutes
-    
-    while (Date.now() - startTime < timeout) {
-      const info = await this.getTorrentInfo(torrentId);
-      
-      if (info.status === 'downloaded') {
-        break;
-      }
-      
-      await new Promise(resolve => setTimeout(resolve, 4000));
+    // Check if already downloaded
+    const currentInfo = await this.getTorrentInfo(torrentId);
+    if (currentInfo.status === 'downloaded') {
+      return await this.getDirectDownloadUrl(torrentId);
     }
     
-    // Get final info and unrestrict
+    // Not downloaded yet, wait a bit and check again
+    // This gives Real-Debrid a chance to process the torrent
+    await new Promise(resolve => setTimeout(resolve, 5000)); // Wait 5 seconds
+    
+    const retryInfo = await this.getTorrentInfo(torrentId);
+    if (retryInfo.status === 'downloaded') {
+      return await this.getDirectDownloadUrl(torrentId);
+    }
+    
+    // Still not ready, return placeholder video URL
+    return this.createPlaceholderUrl(torrentId);
+  }
+
+  private async getDirectDownloadUrl(torrentId: string): Promise<string> {
     const finalInfo = await this.getTorrentInfo(torrentId);
     
     if (!finalInfo.links || finalInfo.links.length === 0) {
@@ -127,4 +133,10 @@ export class RealDebridService {
     const { download } = await this.unrestrictLink(downloadLink);
     return download;
   }
+
+  private createPlaceholderUrl(torrentId: string): string {
+    const config = ConfigService.loadConfig();
+    return `${config.baseUrl}/placeholder/downloading.mp4`;
+  }
+
 }
