@@ -34,12 +34,11 @@ export function setupRoutes() {
   const configController = new ConfigController();
   const streamController = new StreamController();
 
-  // Initialize addon builder and router
+  // Initialize addon builder
   const builder = new addonBuilder(configController.createAddonManifest() as any);
   builder.defineStreamHandler(async (args: StreamRequest) => {
     return streamController.handleStreamRequest(args);
   });
-  const router = getRouter(builder.getInterface());
 
   // Routes
   fastify.all('/manifest.json', async (req, reply) => {
