@@ -82,7 +82,7 @@ export class ConfigController {
       const token = document.getElementById('rdToken').value.trim();
       if (!token) return;
       
-      const installUrl = \`http://localhost:${this.config.port}/manifest.json?realdebridToken=\${encodeURIComponent(token)}\`;
+      const installUrl = \`${this.config.baseUrl}/manifest.json?realdebridToken=\${encodeURIComponent(token)}\`;
       
       ${isConfigured ? `
       window.location.href = installUrl;
