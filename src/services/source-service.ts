@@ -10,22 +10,25 @@ export class SourceService {
     type: string, 
     id: string
   ): Promise<SourceStream[]> {
-    const allStreams: SourceStream[] = [];
+    console.log(`Fetching streams from ${SOURCES.length} sources in parallel...`);
     
-    for (const source of SOURCES) {
-      try {
-        const streams = await source.getStreams(type, id);
-        
-        if (streams.length > 0) {
-          console.log(`Found ${streams.length} streams from ${source.name}`);
-          allStreams.push(...streams);
+    
+    const results = await Promise.all(
+      SOURCES.map(async (source) => {
+        console.log(`🔍 Fetching streams from ${source.name}...`);
+        try {
+          const streams = await source.getStreams(type, id);
+          console.log(`✅ Found ${streams.length} streams from ${source.name}`);
+          return { source: source.name, streams };
+        } catch (error) {
+          console.warn(`❌ Failed to fetch from ${source.name}:`, error);
+          return { source: source.name, streams: [] };
         }
-      } catch (error) {
-        console.warn(`Failed to fetch from ${source.name}:`, error);
-      }
-    }
+      })
+    );
     
-    console.log(`Total streams found: ${allStreams.length}`);
-    return allStreams;
+        
+    console.log(`🎬 Total streams found: ${results.length}`);
+    return results.flatMap(result => result.streams);
   }
 }
