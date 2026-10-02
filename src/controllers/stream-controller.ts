@@ -2,8 +2,9 @@
  * Stream Controller
  */
 
+import type { DebridCredentials, DebridPlaybackOptions } from '../models/debrid-model.js';
 import type { StreamRequest, StreamResponse } from '../models/stream-model.js';
-import { RealDebridService } from '../services/realdebrid-service.js';
+import { createDebridProvider } from '../services/debrid-service.js';
 import { SourceService } from '../services/source-service.js';
 import { StreamService } from '../services/stream-service.js';
 import { ConfigService } from '../services/config-service.js';
@@ -17,10 +18,8 @@ export class StreamController {
     try {
       console.debug(`Processing stream request: ${type}/${id}`);
       
-      // Fetch streams from all configured sources
       const sourceStreams = await SourceService.fetchStreamsFromAllSources(type, id);
       
-      // Filter streams that have magnet links or infoHash
       const processableStreams = sourceStreams.filter(stream => 
         stream.magnet || 
         stream.infoHash || 
@@ -34,33 +33,31 @@ export class StreamController {
 
       console.debug(`Found ${processableStreams.length} streams with magnet links`);
 
-      // Return streams with our own API URLs - Real-Debrid processing will happen on play
+      const credentials = StreamService.extractDebridCredentials({}, {}, extra);
+      if (!credentials) {
+        console.debug('No debrid token provided, skipping streams');
+      }
+
       const streamMetadata: StreamResponse['streams'] = processableStreams.map(stream => {
-        // Extract magnet link
         const magnet = stream.magnet || 
                        stream.url || 
                        (stream.infoHash ? `magnet:?xt=urn:btih:${stream.infoHash}` : undefined);
         
-        if (!magnet) {
+        if (!magnet || !credentials) {
           return StreamService.createStreamMetadata(stream, '');
         }
         
-        // Create our own API URL that will process the magnet through Real-Debrid
-        const encodedMagnet = encodeURIComponent(magnet);
-        const token = StreamService.extractRealDebridToken({}, {}, extra);
-        
-        if (!token) {
-          console.debug('No Real-Debrid token provided, skipping stream');
-          return StreamService.createStreamMetadata(stream, '');
-        }
-        
-        // Use configured base URL
-        const apiUrl = `${this.config.baseUrl}/resolve/${token}/${encodedMagnet}`;
+        const resolveQuery = new URLSearchParams({
+          provider: credentials.provider,
+          token: credentials.token,
+          magnet
+        });
+        const apiUrl = `${this.config.baseUrl.replace(/\/$/, '')}/resolve?${resolveQuery}`;
         
         return StreamService.createStreamMetadata(stream, apiUrl);
       });
 
-      console.debug(`Returning ${streamMetadata.length} streams with magnet links`);
+      console.debug(`Returning ${streamMetadata.length} streams for ${credentials?.provider ?? 'unconfigured'}`);
       return { streams: streamMetadata };
       
     } catch (error) {
@@ -70,18 +67,25 @@ export class StreamController {
   }
 
   /**
-   * Processes a magnet link through Real-Debrid when user actually plays the stream
+   * Resolves a magnet through the configured debrid provider when playback starts.
    */
-  async processMagnetForPlayback(magnet: string, token: string): Promise<string> {
-    if (!token) {
-      throw new Error('Real-Debrid token is required for playback');
+  async processMagnetForPlayback(
+    magnet: string,
+    credentials: DebridCredentials,
+    userIp?: string
+  ): Promise<string> {
+    if (!credentials.token) {
+      throw new Error('Debrid API token is required for playback');
     }
 
+    const provider = createDebridProvider(credentials);
+    const playbackOptions: DebridPlaybackOptions = {};
+    if (userIp) playbackOptions.userIp = userIp;
+
     try {
-      console.debug(`Processing magnet for playback: ${magnet.substring(0, 50)}...`);
+      console.debug(`Processing magnet for playback via ${provider.id}: ${magnet.substring(0, 50)}...`);
       
-      const rdService = new RealDebridService(token);
-      const directUrl = await rdService.processMagnetToDirectUrl(magnet);
+      const directUrl = await provider.processMagnetToDirectUrl(magnet, playbackOptions);
       
       console.debug(`Successfully processed magnet for playback: ${directUrl}`);
       return directUrl;

@@ -13,7 +13,7 @@ export interface AddonManifest {
   version: string;
   name: string;
   description: string;
-  catalogs: any[];
+  catalogs: unknown[];
   resources: string[];
   types: string[];
   idPrefixes: string[];
@@ -23,10 +23,14 @@ export interface AddonManifest {
     configurable: boolean;
     configurationRequired: boolean;
   };
-  config: Array<{
-    key: string;
-    type: string;
-    title: string;
-    description: string;
-  }>;
+  config: AddonConfigField[];
+}
+
+export interface AddonConfigField {
+  key: string;
+  type: 'text' | 'select';
+  title: string;
+  description: string;
+  options?: string[];
+  default?: string;
 }

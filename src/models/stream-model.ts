@@ -2,6 +2,8 @@
  * Stream Models
  */
 
+import type { DebridRequestExtra } from './debrid-model.js';
+
 export interface StremioStream {
   name?: string;
   title?: string;
@@ -22,8 +24,5 @@ export interface StreamResponse {
 export interface StreamRequest {
   type: string;
   id: string;
-  extra?: {
-    realdebridToken?: string;
-    token?: string;
-  };
+  extra?: DebridRequestExtra;
 }

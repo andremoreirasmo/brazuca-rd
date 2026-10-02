@@ -4,9 +4,13 @@
 
 import { request } from 'undici';
 import { ConfigService } from './config-service.js';
+import { isVideoFileName } from '../models/debrid-model.js';
+import type { DebridProvider } from '../models/debrid-model.js';
 import type { TorrentInfo, MagnetResponse, UnrestrictResponse } from '../models/realdebrid-model.js';
 
-export class RealDebridService {
+export class RealDebridService implements DebridProvider {
+  readonly id = 'realdebrid' as const;
+
   constructor(private token: string) {}
 
   async addMagnet(magnet: string): Promise<MagnetResponse> {
@@ -84,9 +88,7 @@ export class RealDebridService {
     }
     
     // Find largest video file
-    const videoFiles = torrentInfo.files.filter(file => 
-      /\.(mp4|mkv|mov|avi|ts|m4v)$/i.test(file.path)
-    );
+    const videoFiles = torrentInfo.files.filter(file => isVideoFileName(file.path));
     
     if (videoFiles.length === 0) {
       throw new Error('No video files found in torrent');

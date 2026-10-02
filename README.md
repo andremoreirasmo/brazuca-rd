@@ -1,13 +1,13 @@
 # Brazuca RD - Stremio Addon
 
-A Stremio addon that acts as a proxy for torrent-based addons, processing magnet links through Real-Debrid for direct streaming.
+A Stremio addon that acts as a proxy for torrent-based addons, processing magnet links through Real-Debrid or TorBox for direct streaming.
 
 ## 🎯 Features
 
-- **Real-Debrid Integration**: Automatically processes magnet links through Real-Debrid
+- **Real-Debrid and TorBox**: Processes magnet links through the debrid service selected at install
 - **Multiple Sources**: Supports multiple Stremio addon sources (starting with Brazuca Torrents)
 - **Deferred Processing**: Only processes torrents when user actually plays the stream
-- **Placeholder Video**: Shows downloading status while Real-Debrid processes torrents
+- **Placeholder Video**: Shows downloading status while the debrid service processes torrents
 - **Clean Architecture**: Well-organized codebase with models, services, controllers, and routes
 - **Hot Reload**: Development server with automatic reloading
 - **Production Ready**: Configurable base URL for cloud deployment
@@ -17,7 +17,7 @@ A Stremio addon that acts as a proxy for torrent-based addons, processing magnet
 ### Prerequisites
 
 - Node.js 18+ (recommended)
-- Real-Debrid account and API token
+- A Real-Debrid or TorBox account and API token
 - Stremio client
 
 ### Installation
@@ -63,10 +63,12 @@ npm run build && npm start
 
 ### Usage in Stremio
 
-1. **Install addon**: `http://localhost:7000/manifest.json`
-2. **Configure**: Pass Real-Debrid token via:
-   - Query parameter: `?realdebridToken=YOUR_TOKEN`
-   - Header: `x-rd-token: YOUR_TOKEN`
+1. **Install addon**: open `http://localhost:7000/`, choose Real-Debrid or TorBox, and paste the copied manifest URL into Stremio
+2. **Configure**: pass the service and token via:
+   - Query parameters: `?debridProvider=torbox&debridToken=YOUR_TOKEN`
+   - Real-Debrid header: `x-rd-token: YOUR_TOKEN`
+   - TorBox header: `x-tb-token: YOUR_TOKEN`
+   - Existing Real-Debrid installs that only send `realdebridToken` keep working
 
 ## 🏗️ Architecture
 
@@ -87,6 +89,7 @@ src/
 - **ConfigService**: Manages application configuration
 - **SourceService**: Orchestrates multiple source providers
 - **RealDebridService**: Handles Real-Debrid API interactions
+- **TorboxService**: Handles TorBox API interactions
 - **StreamController**: Processes stream requests
 - **ConfigController**: Manages addon manifest and configuration
 
@@ -113,13 +116,14 @@ export const SOURCES = [
 ];
 ```
 
-### Real-Debrid Token
+### Debrid token
 
-The addon requires Real-Debrid tokens per request. Users can provide tokens via:
+Each install uses one debrid service. Users can provide it via:
 
-1. **Query Parameter**: `?realdebridToken=TOKEN`
-2. **Header**: `x-rd-token: TOKEN`
-3. **Stremio Configuration**: Token is passed through Stremio's addon system
+1. **Query parameters**: `?debridProvider=realdebrid&debridToken=TOKEN` or `?debridProvider=torbox&debridToken=TOKEN`
+2. **Headers**: `x-rd-token: TOKEN` for Real-Debrid, `x-tb-token: TOKEN` for TorBox
+3. **Stremio configuration**: the manifest asks for the service and API token
+4. **Legacy Real-Debrid parameter**: `?realdebridToken=TOKEN` still selects Real-Debrid
 
 ## 🌐 Deployment
 
@@ -178,7 +182,8 @@ CMD ["npm", "start"]
 - `GET /manifest.json` - Addon manifest
 - `GET /configure` - Configuration page
 - `GET /stream/:type/:id.json` - Stream discovery
-- `GET /resolve/:token/:magnet` - Real-Debrid processing
+- `GET /resolve?provider=realdebrid|torbox&token=TOKEN&magnet=MAGNET` - Real-Debrid or TorBox processing
+- `GET /resolve/:token/:magnet` - legacy Real-Debrid processing
 - `GET /placeholder/downloading.mp4` - Placeholder video
 
 ## 🔍 Development
@@ -217,6 +222,7 @@ This project is licensed under the MIT License.
 
 - **Brazuca Torrents**: Original Stremio addon that inspired this project
 - **Real-Debrid**: Premium debrid service for torrent processing
+- **TorBox**: Debrid service for torrent processing
 - **Stremio**: Media center platform
 
 ## 🆘 Support
@@ -229,4 +235,4 @@ For issues and questions:
 
 ---
 
-**Note**: This addon requires a Real-Debrid subscription to function. Users must provide their own Real-Debrid API tokens.
+**Note**: This addon requires a Real-Debrid or TorBox account. Users must provide their own API token.
